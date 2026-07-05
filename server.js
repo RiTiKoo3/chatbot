@@ -7,15 +7,20 @@ const { generateText } = require('./src/service/ai.service');
 const httpServer = createServer(app);
 const io = new Server(httpServer);
 
+const chatHistory = [];
+
+
 io.on("connection", (socket) => {
     console.log("user connected", socket.id);
 
     socket.on("message", async (data) => {
-        console.log( data);
-        const msg = data
+        chatHistory.push({ role: "user", content: data });
+        
+        const response = await generateText(chatHistory.map(msg => `${msg.role}: ${msg.content}`).join("\n"));
+        io.emit("message-response", response );
+        chatHistory.push({ role: "model", content: response });
 
-        const response = await generateText(msg);
-        io.emit("message", response );
+
     })
 
     socket.on("disconnect", (data) => {
